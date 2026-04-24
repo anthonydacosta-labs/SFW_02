@@ -63,6 +63,11 @@
 
         { "path": "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi_ex.c" },
 
+        { "path": "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c" },
+
+        { "path": "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c" },
+
+
         { "path": "../SFW_02.ioc" }
       ],
       "tools": [
@@ -355,6 +360,10 @@
         { "path": "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c" },
 
         { "path": "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi_ex.c" },
+
+        { "path": "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c" },
+
+        { "path": "../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c" },
 
         { "path": "../SFW_02.ioc" }
       ],

@@ -37,6 +37,8 @@ target_sources(${BUILD_UNIT_0_NAME} PRIVATE
     "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c"
     "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c"
     "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi_ex.c"
+    "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c"
+    "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c"
     "SFW_02.ioc"
 )
 
