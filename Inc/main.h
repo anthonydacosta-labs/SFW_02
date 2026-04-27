@@ -69,5 +69,4 @@ void Error_Handler(void);
 #endif /* __MAIN_H */
 
 
-
 //uint8_t ReadNVM_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin, uint8_t CRx, uint8_t *result);
