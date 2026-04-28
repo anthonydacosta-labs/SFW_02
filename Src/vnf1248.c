@@ -17,7 +17,6 @@ uint8_t VNF_TransmitReceive(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uin
 	uint8_t tmp=0;
 	uint8_t tmp2=0;
 
-
 	// correct parity bit
 	tmp = TxBuf[0]^TxBuf[1]^TxBuf[2]^TxBuf[3];
 	tmp2=tmp;
@@ -29,12 +28,14 @@ uint8_t VNF_TransmitReceive(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uin
 	tmp = 0x01&(~tmp);
 	TxBuf[3] ^= tmp;
 
+	HAL_NVIC_DisableIRQ(TIM2_IRQn);	// avoid conflicts (this is dirty)
+
 	//HAL_Delay(1);
 	// ugly short delay
 	k=0;
 	while(k<10000)
 		k++;
-      
+	
 	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_RESET);
 	//HAL_Delay(1); // rough -- we could do better, but a delay is needed (especially when the VNF is in stdby)
 	// ugly short delay
@@ -53,6 +54,8 @@ uint8_t VNF_TransmitReceive(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uin
 	k=0;
 	while(k<10000)
 		k++;
+
+	HAL_NVIC_EnableIRQ(TIM2_IRQn);
 
 	return(0); // TODO: add error handling
 }

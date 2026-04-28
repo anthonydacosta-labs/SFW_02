@@ -153,97 +153,8 @@ int main(void)
 		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);	// enable 5V supply
 		  
 
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);	// pull HWLO low
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);	// pull HWLO low
-
-
-		  // read some registers on the VNF1248
-		  // rom read mode starts with '11', then 6-bit address, then 24-bit "don't care"
-		  // first answer byte is GSB, second is the polled register
-      /*
-		  SPI2_TxBuf[0] = 0b11000010; // 0x02 --> product first code, expect 0x55
-		  SPI2_TxBuf[1] = 0b00000010; // 0x03 -->
-		  SPI2_TxBuf[2] = 0b00000000; // 0x04 -->
-		  SPI2_TxBuf[3] = 0b00000000; // 0x04 -->
-      */
-      SPI2_TxBuf[0] = 0xFF; // 0xFFFF --> device reset
-		  SPI2_TxBuf[1] = 0b00000000; // 0x03 -->
-		  SPI2_TxBuf[2] = 0b00000000; // 0x04 -->
-		  SPI2_TxBuf[3] = 0b00000001; // 0x04 -->
-      //SPI2_TxBuf[0] = CR5_ADDR|0b11000000;
-      //SPI2_TxBuf[0] &= 0b01111111; // 0b01 = read command
-		  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_RESET);
-		  //HAL_Delay(1); // this seems needed (1ms is likely too much ; we could just fill with a few nop)
-		  // ugly short delay
-      /*
-		  k=0;
-		  while(k<10000)
-			  k++;*/
-      
-      //HAL_Delay(1);
-		  //HAL_SPI_TransmitReceive(&hspi2, SPI2_TxBuf, SPI2_RxBuf, 4, 100);
-		  /*
-		  k=0;
-		  while(k<10000)
-			  k++;*/
-      //HAL_Delay(1);
-		  //HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_SET);
-      /*
-		  k=0;
-		  while(k<10000)
-			  k++;*/
-      /*
-      HAL_Delay(1);
-      SPI2_TxBuf[0] = 0xBF; // 0xFFFF --> device reset
-		  SPI2_TxBuf[1] = 0b00000000; // 0x03 -->
-		  SPI2_TxBuf[2] = 0b00000000; // 0x04 -->
-		  SPI2_TxBuf[3] = 0b00000000; // 0x04 -->
-      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_RESET);
-      
-		  k=0;
-		  while(k<10000)
-			  k++;*/
-      //HAL_Delay(1);
-		  //HAL_SPI_TransmitReceive(&hspi2, SPI2_TxBuf, SPI2_RxBuf, 4, 100);
-		  /*
-		  k=0;
-		  while(k<10000)
-			  k++;*/
-      //HAL_Delay(1);
-		  //HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_SET);
-      
-      /*
-      HAL_Delay(1);
-      SPI2_TxBuf[0] = 0x03; // write to CR3
-		  SPI2_TxBuf[1] = 0b00000000; // 0x03 -->
-		  SPI2_TxBuf[2] = 0b00000010; // 0x04 --> set UNLOCK to 1
-		  SPI2_TxBuf[3] = 0b00000000; // 0x04 -->
-      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_RESET);
-      HAL_Delay(1);
-		  HAL_SPI_TransmitReceive(&hspi2, SPI2_TxBuf, SPI2_RxBuf, 4, 100);
-      HAL_Delay(1);
-		  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_SET);
-      HAL_Delay(1);
-      SPI2_TxBuf[0] = 0x01; // write to CR1
-		  SPI2_TxBuf[1] = 0b00000000; // 0x03 -->
-		  SPI2_TxBuf[2] = 0b00001000; // 0x04 --> set GOTOSTBY to 1
-		  SPI2_TxBuf[3] = 0b00000001; // 0x04 -->
-      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_RESET);
-      HAL_Delay(1);
-		  HAL_SPI_TransmitReceive(&hspi2, SPI2_TxBuf, SPI2_RxBuf, 4, 100);
-      HAL_Delay(1);
-		  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_SET);
-      SPI2_TxBuf[0] = 0b01000101; // read SR1
-		  SPI2_TxBuf[1] = 0b00000000; // 0x03 -->
-		  SPI2_TxBuf[2] = 0b00000000; // 0x04 --> set GOTOSTBY to 1
-		  SPI2_TxBuf[3] = 0b00000000; // 0x04 -->
-      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_RESET);
-      HAL_Delay(1);
-		  HAL_SPI_TransmitReceive(&hspi2, SPI2_TxBuf, SPI2_RxBuf, 4, 100);
-      HAL_Delay(1);
-		  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_SET);
-      */
-		  
+      //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);	// pull HWLO low
+      //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);	// pull HWLO low
 
 
 
@@ -251,6 +162,8 @@ int main(void)
       // to be completed / corrected
 
       //Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_1);
+
+      /*
 
       HAL_Delay(100);
 
@@ -293,6 +206,16 @@ int main(void)
       VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
 
       HAL_Delay(100);
+
+      */
+
+      SPI2_TxBuf[0] = CR1_ADDR; //0x008400
+      SPI2_TxBuf[1] = 0x00;
+      SPI2_TxBuf[2] = 0x84;
+      SPI2_TxBuf[3] = 0x11; //--> turn on main FET
+      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+
+
 
       
 
