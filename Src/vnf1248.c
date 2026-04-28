@@ -13,7 +13,7 @@
 
 uint8_t VNF_TransmitReceive(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin, uint8_t *TxBuf, uint8_t *RxBuf)
 {
-	uint8_t k=0;
+	uint32_t k=0;
 	uint8_t tmp=0;
 	uint8_t tmp2=0;
 
@@ -29,13 +29,30 @@ uint8_t VNF_TransmitReceive(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uin
 	tmp = 0x01&(~tmp);
 	TxBuf[3] ^= tmp;
 
-	HAL_Delay(1);
+	//HAL_Delay(1);
+	// ugly short delay
+	k=0;
+	while(k<10000)
+		k++;
+      
 	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_RESET);
-	HAL_Delay(1); // rough -- we could do better, but a delay is needed (especially when the VNF is in stdby)
+	//HAL_Delay(1); // rough -- we could do better, but a delay is needed (especially when the VNF is in stdby)
+	// ugly short delay
+	k=0;
+	while(k<10000)
+		k++;
 	HAL_SPI_TransmitReceive(hspi, TxBuf, RxBuf, 4, 100);
-	HAL_Delay(1);
+	//HAL_Delay(1);
+	// ugly short delay
+	k=0;
+	while(k<10000)
+		k++;
 	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_SET);
-	HAL_Delay(1);
+	//HAL_Delay(1);
+	// ugly short delay
+	k=0;
+	while(k<10000)
+		k++;
 
 	return(0); // TODO: add error handling
 }
@@ -44,7 +61,7 @@ void Initialize_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS
 {
 	uint8_t TxBuf[4];
 	uint8_t RxBuf[4];
-	uint32_t k=0;
+	//uint32_t k=0;
 	uint8_t r=0;
 	uint32_t cfg_word = 0;
 
@@ -60,7 +77,7 @@ void Initialize_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS
 	TxBuf[3] = 0b00000000;
 	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
 
-	TxBuf[0] = 0x03; // write cmd to CR3
+	TxBuf[0] = CR3_ADDR; // write cmd to CR3
 	TxBuf[1] = 0b00000000;
 	TxBuf[2] = 0b00000010; // 0x04 --> set UNLOCK bit to 1  -- MUST do CR1 after this to set EN bit
 	TxBuf[3] = 0b00000000;
@@ -95,6 +112,33 @@ void Initialize_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS
 		// TODO: add check
 	}
 	return;
+}
+
+void PetWD_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin)
+{
+	uint8_t TxBuf[4];
+	uint8_t RxBuf[4];
+	uint8_t tmp=0;
+	uint8_t k=0;
+
+	// read CR3
+	TxBuf[0] = 0b01000000|CR3_ADDR; // 0b01 = read command
+	TxBuf[1] = 0b00000000;
+	TxBuf[2] = 0b00000000;
+	TxBuf[3] = 0b00000000;
+	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
+	// TODO: add error processing
+	tmp = (RxBuf[3]&0b10)>>1;
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, tmp?GPIO_PIN_SET:GPIO_PIN_RESET);
+	TxBuf[0] = CR3_ADDR; // 0b00 = write command
+	for(k=1;k<4;k++)
+	{
+		TxBuf[k]=RxBuf[k];
+	}
+	TxBuf[3]^=0b11; // flip WD bit
+	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
+	// TODO: add error processing
+
 }
 
 

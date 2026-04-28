@@ -26,7 +26,7 @@
 //#define CR1_CONFIG 0x008000		// NVM_DEF_CFG_EN=0, FS_MODE=10 (no change)
 #define CR1_CONFIG 0x008400		// NVM_DEF_CFG_EN=0, FS_MODE=10 (no change)   -- set EN to 1 (only effective if preceded by UNLOCK)
 #define CR2_CONFIG 0x977401		// T_NOM=280s, OVC_THR=23.3mV, HSC_THR=60.6mV, VDS_THR=300mV
-#define CR3_CONFIG 0x000901		// UV_THR=12V, NTC_THR=37.5mV (~150°C)
+#define CR3_CONFIG 0x000958		// UV_THR=12V, WD_TIME=200ms, NTC_THR=37.5mV (~150°C)   100101011001
 #define CR5_CONFIG 0xC00001		// CCM_TIMEOUT=400ms  -- TO BE ADJUSTED
 
 #define CR1_ADDR 0x01
@@ -49,3 +49,5 @@ uint8_t VNF_TransmitReceive(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uin
 void Initialize_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin);
 
 uint8_t ReadNVM_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin, uint8_t CRx, uint8_t *result);
+
+void PetWD_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin);

@@ -106,8 +106,12 @@ int main(void)
   MX_SPI2_Init();
   MX_SPI3_Init();
   MX_TIM2_Init();
-  HAL_TIM_Base_Start_IT(&htim2);
+//  HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE BEGIN 2 */
+
+  Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_1);
+
+  HAL_TIM_Base_Start_IT(&htim2);
 
   /* USER CODE END 2 */
 
@@ -246,7 +250,7 @@ int main(void)
 		  //NVMerr = ReadNVM_vnf(&hspi2, GPIOC, GPIO_PIN_1, 5, NVMread);
       // to be completed / corrected
 
-      Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_1);
+      //Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_1);
 
       HAL_Delay(100);
 
@@ -301,7 +305,10 @@ int main(void)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
-    HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_2);
+    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_10);
+    //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
+    PetWD_vnf(&hspi2, GPIOC, GPIO_PIN_1);
+    //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
 }
 
 /**
@@ -493,7 +500,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 320;
+  htim2.Init.Prescaler = 319;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 9999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
