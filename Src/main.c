@@ -305,7 +305,7 @@ int main(void)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
-    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_10);
+    //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_10);
     //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
     PetWD_vnf(&hspi2, GPIOC, GPIO_PIN_1);
     //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);

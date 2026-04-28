@@ -129,7 +129,8 @@ void PetWD_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin)
 	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
 	// TODO: add error processing
 	tmp = (RxBuf[3]&0b10)>>1;
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, tmp?GPIO_PIN_SET:GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, tmp?GPIO_PIN_SET:GPIO_PIN_RESET); // WD value --> green
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, (RxBuf[0]&0x1)?GPIO_PIN_SET:GPIO_PIN_RESET); // fail-state --> red
 	TxBuf[0] = CR3_ADDR; // 0b00 = write command
 	for(k=1;k<4;k++)
 	{
