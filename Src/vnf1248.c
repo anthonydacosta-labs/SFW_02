@@ -16,6 +16,9 @@ uint8_t VNF_TransmitReceive(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uin
 	uint32_t k=0;
 	uint8_t tmp=0;
 	uint8_t tmp2=0;
+	//static uint8_t WDbit=0;
+
+
 
 	// correct parity bit
 	tmp = TxBuf[0]^TxBuf[1]^TxBuf[2]^TxBuf[3];

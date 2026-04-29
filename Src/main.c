@@ -210,11 +210,18 @@ int main(void)
       */
 
       SPI2_TxBuf[0] = CR1_ADDR; //0x008400
+      SPI2_TxBuf[1] = 0x04; // --> trigger CCM ON
+      SPI2_TxBuf[2] = 0x84;
+      SPI2_TxBuf[3] = 0x00;
+      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+
+      /*
+      SPI2_TxBuf[0] = CR1_ADDR; //0x008400
       SPI2_TxBuf[1] = 0x00;
       SPI2_TxBuf[2] = 0x84;
       SPI2_TxBuf[3] = 0x11; //--> turn on main FET
       VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
-
+      */
 
 
       
