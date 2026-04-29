@@ -16,9 +16,16 @@ uint8_t VNF_TransmitReceive(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uin
 	uint32_t k=0;
 	uint8_t tmp=0;
 	uint8_t tmp2=0;
-	//static uint8_t WDbit=0;
+	static uint8_t WDbit=0;
 
-
+	if (~(TxBuf[0]&0b11000000)) // if write operation, flip the WD bit -- ugly way to pet WD while TIM2 IRQ is disabled
+	{
+		if(WDbit)
+			TxBuf[3]|=0b10;
+		else
+		 	TxBuf[3]&=!(0b10);
+		WDbit^=0b1;
+	}
 
 	// correct parity bit
 	tmp = TxBuf[0]^TxBuf[1]^TxBuf[2]^TxBuf[3];
@@ -125,7 +132,7 @@ void PetWD_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin)
 	uint8_t TxBuf[4];
 	uint8_t RxBuf[4];
 	uint8_t tmp=0;
-	uint8_t k=0;
+	uint32_t k=0;
 
 	// read CR3
 	TxBuf[0] = 0b01000000|CR3_ADDR; // 0b01 = read command
@@ -142,9 +149,32 @@ void PetWD_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin)
 	{
 		TxBuf[k]=RxBuf[k];
 	}
-	TxBuf[3]^=0b11; // flip WD bit
-	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
+	TxBuf[3]^=0b10; // flip WD bit
+	//VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
 	// TODO: add error processing
+
+	k=0;
+	while(k<10000)
+		k++;
+	
+	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_RESET);
+	//HAL_Delay(1); // rough -- we could do better, but a delay is needed (especially when the VNF is in stdby)
+	// ugly short delay
+	k=0;
+	while(k<10000)
+		k++;
+	HAL_SPI_TransmitReceive(hspi, TxBuf, RxBuf, 4, 100);
+	//HAL_Delay(1);
+	// ugly short delay
+	k=0;
+	while(k<10000)
+		k++;
+	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_SET);
+	//HAL_Delay(1);
+	// ugly short delay
+	k=0;
+	while(k<10000)
+		k++;
 
 }
 
