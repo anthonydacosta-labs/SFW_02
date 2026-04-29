@@ -149,7 +149,7 @@ void PetWD_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin)
 	{
 		TxBuf[k]=RxBuf[k];
 	}
-	TxBuf[3]^=0b10; // flip WD bit
+	TxBuf[3]^=0b10; // flip WD bit (tot. 2 bits flipped --> don't flip parity bit)
 	//VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
 	// TODO: add error processing
 

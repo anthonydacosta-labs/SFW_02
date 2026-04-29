@@ -55,6 +55,7 @@ uint8_t NVMread[3];
 uint32_t k=0;
 uint8_t NVMerr=0;
 uint32_t cfg_word = 0;
+int8_t OutputState=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -156,72 +157,59 @@ int main(void)
       //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);	// pull HWLO low
       //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);	// pull HWLO low
 
-
-
 		  //NVMerr = ReadNVM_vnf(&hspi2, GPIOC, GPIO_PIN_1, 5, NVMread);
       // to be completed / corrected
 
-      //Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_1);
+      if(OutputState==0)
+      {
+        OutputState = 1; // using 1 for CCM
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
 
-      /*
+        SPI2_TxBuf[0] = CR1_ADDR; //0x008400
+        SPI2_TxBuf[1] = 0x04; // --> trigger CCM ON
+        SPI2_TxBuf[2] = 0x84;
+        SPI2_TxBuf[3] = 0x00;
+        VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
 
-      HAL_Delay(100);
+        while(OutputState == 1)
+        {
+          // read SR1
+          SPI2_TxBuf[0] = 0b01000000|SR1_ADDR; // 0b01 = read command
+          SPI2_TxBuf[1] = 0b00000000;
+          SPI2_TxBuf[2] = 0b00000000;
+          SPI2_TxBuf[3] = 0b00000000;
+          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
 
-      SPI2_TxBuf[0] = 0b01000000|CR1_ADDR;
-      SPI2_TxBuf[1] = 0x00;
-      SPI2_TxBuf[2] = 0x00;
-      SPI2_TxBuf[3] = 0x00;
-      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+          switch((SPI2_RxBuf[1]&0xC0)>>6)
+          {
+            case 0b10:
+              OutputState=2;
+              break;
 
-      HAL_Delay(100);
+            case 0b11:
+              OutputState=-1;
+              break;
 
-      SPI2_TxBuf[0] = CR1_ADDR; //0x008400
-      SPI2_TxBuf[1] = 0x00;
-      SPI2_TxBuf[2] = 0x84;
-      SPI2_TxBuf[3] = 0x00; //--> turn off outputs
-      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+            case 0b00:
+              OutputState=-2;
+              break;
 
-      HAL_Delay(100);
+            default:
+              break;
+          }
+        }
 
-      SPI2_TxBuf[0] = 0b01000000|CR1_ADDR;
-      SPI2_TxBuf[1] = 0x00;
-      SPI2_TxBuf[2] = 0x00;
-      SPI2_TxBuf[3] = 0x00;
-      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+        if (OutputState == 2)
+        {
+          SPI2_TxBuf[0] = CR1_ADDR; //0x008400
+          SPI2_TxBuf[1] = 0x00;
+          SPI2_TxBuf[2] = 0x84;
+          SPI2_TxBuf[3] = 0x11; //--> turn on main FET
+          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+        }
 
-      HAL_Delay(100);
-      
-      SPI2_TxBuf[0] = CR1_ADDR; //0x008400
-      SPI2_TxBuf[1] = 0x00;
-      SPI2_TxBuf[2] = 0x84;
-      SPI2_TxBuf[3] = 0x11; //--> turn on main FET
-      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
-
-      HAL_Delay(100);
-
-      SPI2_TxBuf[0] = 0b01000000|CR1_ADDR;
-      SPI2_TxBuf[1] = 0x00;
-      SPI2_TxBuf[2] = 0x00;
-      SPI2_TxBuf[3] = 0x00;
-      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
-
-      HAL_Delay(100);
-
-      */
-
-      SPI2_TxBuf[0] = CR1_ADDR; //0x008400
-      SPI2_TxBuf[1] = 0x04; // --> trigger CCM ON
-      SPI2_TxBuf[2] = 0x84;
-      SPI2_TxBuf[3] = 0x00;
-      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
-
-      /*
-      SPI2_TxBuf[0] = CR1_ADDR; //0x008400
-      SPI2_TxBuf[1] = 0x00;
-      SPI2_TxBuf[2] = 0x84;
-      SPI2_TxBuf[3] = 0x11; //--> turn on main FET
-      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
-      */
+      }
 
 
       
@@ -432,7 +420,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 319;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 4999;
+  htim2.Init.Period = 9999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
