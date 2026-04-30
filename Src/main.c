@@ -165,6 +165,18 @@ int main(void)
         OutputState = 1; // using 1 for CCM
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
 
+        // use pre-charge current trip threshold
+        SPI2_TxBuf[0] = CR2_ADDR;
+        SPI2_TxBuf[1] = (CR2_PRCHG&0x00FF0000)>>16;
+		    SPI2_TxBuf[2] = (CR2_PRCHG&0x0000FF00)>>8;
+		    SPI2_TxBuf[3] = (CR2_PRCHG&0x000000FF);
+		    VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+
+        // ugly short delay
+        k=0;
+        while(k<10000)
+          k++;
+
         SPI2_TxBuf[0] = CR1_ADDR; //0x008400
         SPI2_TxBuf[1] = 0x04; // --> trigger CCM ON
         SPI2_TxBuf[2] = 0x84;
@@ -201,6 +213,18 @@ int main(void)
 
         if (OutputState == 2)
         {
+          // revert to regular current trip threshold
+          SPI2_TxBuf[0] = CR2_ADDR;
+          SPI2_TxBuf[1] = (CR2_CONFIG&0x00FF0000)>>16;
+          SPI2_TxBuf[2] = (CR2_CONFIG&0x0000FF00)>>8;
+          SPI2_TxBuf[3] = (CR2_CONFIG&0x000000FF);
+          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+          // ugly short delay
+          k=0;
+          while(k<10000)
+            k++;
+
+          // turn FET ON
           SPI2_TxBuf[0] = CR1_ADDR; //0x008400
           SPI2_TxBuf[1] = 0x00;
           SPI2_TxBuf[2] = 0x84;
