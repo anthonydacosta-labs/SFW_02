@@ -80,7 +80,6 @@ static void MX_TIM2_Init(void);
   */
 int main(void)
 {
-
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -110,7 +109,8 @@ int main(void)
 //  HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE BEGIN 2 */
 
-  Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_1);
+  //Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_1);
+  Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_2);  // ch. B
 
   HAL_TIM_Base_Start_IT(&htim2);
 
@@ -135,13 +135,22 @@ int main(void)
 
 	  if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_3)==GPIO_PIN_SET)	// poll user button ; =0 when pressed
 	  {
+      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);	// disable 5V supply
+
 		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);	// disable AUX CP
 		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);	// disable AUX precharge
 		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);	// disable AUX CHG
 		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);	// disable AUX DISCH
 		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);	// disable AUX Vmon
 
-		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);	// disable 5V supply
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);	// enable AUX CP
+
+      if (OutputState == 2) // enable short-circuit on button release
+      {
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);	// disable AUX CHG
+		    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);	// disable AUX DISCH
+      }
+
 	  }
 	  else
 	  {
@@ -170,7 +179,8 @@ int main(void)
         SPI2_TxBuf[1] = (CR2_PRCHG&0x00FF0000)>>16;
 		    SPI2_TxBuf[2] = (CR2_PRCHG&0x0000FF00)>>8;
 		    SPI2_TxBuf[3] = (CR2_PRCHG&0x000000FF);
-		    VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+		    //VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+        VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf); // Ch. B
 
         // ugly short delay
         k=0;
@@ -181,7 +191,8 @@ int main(void)
         SPI2_TxBuf[1] = 0x04; // --> trigger CCM ON
         SPI2_TxBuf[2] = 0x84;
         SPI2_TxBuf[3] = 0x00;
-        VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+        //VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+        VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf); // Ch. B
 
         while(OutputState == 1)
         {
@@ -190,7 +201,8 @@ int main(void)
           SPI2_TxBuf[1] = 0b00000000;
           SPI2_TxBuf[2] = 0b00000000;
           SPI2_TxBuf[3] = 0b00000000;
-          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+          //VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf); // Ch. B
 
           switch((SPI2_RxBuf[1]&0xC0)>>6)
           {
@@ -218,19 +230,22 @@ int main(void)
           SPI2_TxBuf[1] = (CR2_CONFIG&0x00FF0000)>>16;
           SPI2_TxBuf[2] = (CR2_CONFIG&0x0000FF00)>>8;
           SPI2_TxBuf[3] = (CR2_CONFIG&0x000000FF);
-          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
-          // ugly short delay
-          k=0;
-          while(k<10000)
-            k++;
+          //VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf); // Ch. B
 
           // turn FET ON
           SPI2_TxBuf[0] = CR1_ADDR; //0x008400
           SPI2_TxBuf[1] = 0x00;
           SPI2_TxBuf[2] = 0x84;
           SPI2_TxBuf[3] = 0x11; //--> turn on main FET
-          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+          //VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
+          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf); // Ch. B
           HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+
+          // ugly short delay
+          k=0;
+          while(k<10000)
+            k++;
         }
 
       }
@@ -249,7 +264,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
     //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_10);
     //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
-    PetWD_vnf(&hspi2, GPIOC, GPIO_PIN_1);
+    //PetWD_vnf(&hspi2, GPIOC, GPIO_PIN_1);
+    PetWD_vnf(&hspi2, GPIOC, GPIO_PIN_2); // Ch. B
     //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
 }
 
@@ -365,7 +381,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
