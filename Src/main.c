@@ -140,7 +140,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_11);
+	  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_11);
 	  /*
     HAL_Delay(100);
 	  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_10);
@@ -191,7 +191,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
     //HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_2);
     //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
     //PetWD_vnf(&hspi2, GPIOC, GPIO_PIN_1);
-    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_11);
+    //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_11);
     PetWD_vnf(&hspi2, GPIOC, GPIO_PIN_2); // Ch. B
     //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
 }
