@@ -18,6 +18,7 @@ uint8_t VNF_TransmitReceive(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uin
 	uint8_t tmp2=0;
 	static uint8_t WDbit=0;
 
+	/*
 	if (~(TxBuf[0]&0b11000000)) // if write operation, flip the WD bit -- ugly way to pet WD while TIM2 IRQ is disabled
 	{
 		if(WDbit)
@@ -26,6 +27,7 @@ uint8_t VNF_TransmitReceive(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uin
 		 	TxBuf[3]&=!(0b10);
 		WDbit^=0b1;
 	}
+		*/
 
 	// correct parity bit
 	tmp = TxBuf[0]^TxBuf[1]^TxBuf[2]^TxBuf[3];
@@ -150,9 +152,10 @@ void PetWD_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin)
 		TxBuf[k]=RxBuf[k];
 	}
 	TxBuf[3]^=0b10; // flip WD bit (tot. 2 bits flipped --> don't flip parity bit)
-	//VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
+	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
 	// TODO: add error processing
 
+	/*
 	k=0;
 	while(k<10000)
 		k++;
@@ -175,11 +178,12 @@ void PetWD_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin)
 	k=0;
 	while(k<10000)
 		k++;
+	*/
 
 }
 
 
-uint8_t RW_NVM_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin, uint8_t R_nW)
+int8_t RW_NVM_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin, uint8_t R_nW)
 {
 	uint8_t TxBuf[4];
 	uint8_t RxBuf[4];
@@ -200,7 +204,7 @@ uint8_t RW_NVM_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_
 	TxBuf[0] = 0b00000000|CR3_ADDR; // 0b00 = write command
 	TxBuf[1] = RxBuf[1];
 	TxBuf[2] = RxBuf[2]|0b00000010;
-	TxBuf[3] = RxBuf[3]|0b00000001;
+	TxBuf[3] = RxBuf[3]^0x02; // pet WD
 	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
 
 	// now the VNF is unlocked, send the NVM access key
@@ -222,11 +226,10 @@ uint8_t RW_NVM_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_
 		TxBuf[3] |= 0x08; // write		/////// 0x0C in one step?
 	else
 	 	TxBuf[3] |= 0x00; // read		/////// 0x04 in one step?
-
+	//TxBuf[3] |= 0x04;	// start
 	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
 
 	TxBuf[3] ^= 0x02; // pet WD
-	TxBuf[3] &= 0x02;
 	TxBuf[3] |= 0x04;	// start
 	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
 
@@ -253,6 +256,10 @@ uint8_t RW_NVM_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_
 			tmp2 = ((RxBuf[1]&0x01)<<1) + ((RxBuf[2]&0x80)>>7);
 			switch(tmp2)
 			{
+				case 0b00:
+					tmp=0;
+					error=-1;
+					break;
 				case 0b10:
 					tmp=0;
 					break;

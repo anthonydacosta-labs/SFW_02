@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stm32g4xx_hal.h"
 #include "vnf1248.h"
 /* USER CODE END Includes */
 
@@ -112,11 +113,26 @@ int main(void)
   //Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_1);
   Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_2);  // ch. B
 
-  RW_NVM_vnf(&hspi2, GPIOC, GPIO_PIN_2, 0);  // write NVM
+  RW_NVM_vnf(&hspi2, GPIOC, GPIO_PIN_2, 1);  // read NVM
+  //RW_NVM_vnf(&hspi2, GPIOC, GPIO_PIN_2, 0);  // write NVM
+  
+  /*
+  Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_2);  // ch. B
+  HAL_Delay(10);
+  Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_2);  // ch. B
+  SPI2_TxBuf[0] = CR3_ADDR; // write cmd to CR3
+	SPI2_TxBuf[1] = 0b00000000;
+	SPI2_TxBuf[2] = 0b00000010; // 0x04 --> set UNLOCK bit to 1  -- MUST do CR1 after this to set EN bit
+	SPI2_TxBuf[3] = 0b00000000;
+	VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+  SPI2_TxBuf[0] = CR1_ADDR;
+  SPI2_TxBuf[1] = (CR1_CONFIG&0x00FF0000)>>16;
+  SPI2_TxBuf[2] = (CR1_CONFIG&0x0000FF00)>>8;
+  SPI2_TxBuf[3] = (CR1_CONFIG&0x000000FF);
+  VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+  */
 
-  //RW_NVM_vnf(&hspi2, GPIOC, GPIO_PIN_2, 1);  // read NVM
-
-  HAL_TIM_Base_Start_IT(&htim2);  // any other comm with VNF should stop during NVM operation
+  HAL_TIM_Base_Start_IT(&htim2);  // the interrupts is used to service VNF WD
 
   /* USER CODE END 2 */
 
@@ -124,7 +140,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_11);
+	  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_11);
 	  /*
     HAL_Delay(100);
 	  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_10);
@@ -172,9 +188,10 @@ int main(void)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
-    //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_10);
+    //HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_2);
     //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
     //PetWD_vnf(&hspi2, GPIOC, GPIO_PIN_1);
+    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_11);
     PetWD_vnf(&hspi2, GPIOC, GPIO_PIN_2); // Ch. B
     //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
 }
