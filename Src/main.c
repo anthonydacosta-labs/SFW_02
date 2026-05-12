@@ -113,24 +113,9 @@ int main(void)
   //Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_1);
   Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_2);  // ch. B
 
-  RW_NVM_vnf(&hspi2, GPIOC, GPIO_PIN_2, 1);  // read NVM
+  NVMerr = RW_NVM_vnf(&hspi2, GPIOC, GPIO_PIN_2, 1);  // read NVM
   //RW_NVM_vnf(&hspi2, GPIOC, GPIO_PIN_2, 0);  // write NVM
   
-  /*
-  Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_2);  // ch. B
-  HAL_Delay(10);
-  Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_2);  // ch. B
-  SPI2_TxBuf[0] = CR3_ADDR; // write cmd to CR3
-	SPI2_TxBuf[1] = 0b00000000;
-	SPI2_TxBuf[2] = 0b00000010; // 0x04 --> set UNLOCK bit to 1  -- MUST do CR1 after this to set EN bit
-	SPI2_TxBuf[3] = 0b00000000;
-	VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
-  SPI2_TxBuf[0] = CR1_ADDR;
-  SPI2_TxBuf[1] = (CR1_CONFIG&0x00FF0000)>>16;
-  SPI2_TxBuf[2] = (CR1_CONFIG&0x0000FF00)>>8;
-  SPI2_TxBuf[3] = (CR1_CONFIG&0x000000FF);
-  VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
-  */
 
   HAL_TIM_Base_Start_IT(&htim2);  // the interrupts is used to service VNF WD
 
@@ -141,15 +126,6 @@ int main(void)
   while (1)
   {
 	  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_11);
-	  /*
-    HAL_Delay(100);
-	  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_10);
-	  HAL_Delay(100);
-	  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_12);
-	  HAL_Delay(100);
-	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_2);
-	  HAL_Delay(100);
-    */
 
 
 	  if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_3)==GPIO_PIN_SET)	// poll user button ; =0 when pressed
@@ -169,18 +145,6 @@ int main(void)
       VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
 
       HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);	// enable 5V supply
-		  
-
-      //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);	// pull HWLO low
-      //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);	// pull HWLO low
-
-		  //NVMerr = ReadNVM_vnf(&hspi2, GPIOC, GPIO_PIN_1, 5, NVMread);
-      // to be completed / corrected
-
-      
-
-
-
 	  }
   }
   /* USER CODE END 3 */
@@ -188,12 +152,7 @@ int main(void)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
-    //HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_2);
-    //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
-    //PetWD_vnf(&hspi2, GPIOC, GPIO_PIN_1);
-    //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_11);
     PetWD_vnf(&hspi2, GPIOC, GPIO_PIN_2); // Ch. B
-    //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
 }
 
 /**
