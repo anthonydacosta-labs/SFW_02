@@ -112,7 +112,11 @@ int main(void)
   //Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_1);
   Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_2);  // ch. B
 
-  HAL_TIM_Base_Start_IT(&htim2);
+  RW_NVM_vnf(&hspi2, GPIOC, GPIO_PIN_2, 0);  // write NVM
+
+  //RW_NVM_vnf(&hspi2, GPIOC, GPIO_PIN_2, 1);  // read NVM
+
+  HAL_TIM_Base_Start_IT(&htim2);  // any other comm with VNF should stop during NVM operation
 
   /* USER CODE END 2 */
 
@@ -120,7 +124,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
 	  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_11);
 	  /*
     HAL_Delay(100);
@@ -137,30 +140,19 @@ int main(void)
 	  {
       HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);	// disable 5V supply
 
-		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);	// disable AUX CP
-		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);	// disable AUX precharge
-		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);	// disable AUX CHG
-		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);	// disable AUX DISCH
-		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);	// disable AUX Vmon
 
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);	// enable AUX CP
-
-      if (OutputState == 2) // enable short-circuit on button release
-      {
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);	// disable AUX CHG
-		    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);	// disable AUX DISCH
-      }
 
 	  }
 	  else
 	  {
-		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);	// enable AUX CP
-		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);	// enable AUX precharge
-		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);	// enable AUX CHG
-		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);	// enable AUX DISCH
-		  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_SET);	// enable AUX Vmon
+		
+      SPI2_TxBuf[0] = 0b01000000|CR5_ADDR; // 0b01 = read command
+      SPI2_TxBuf[1] = 0b00000000;
+      SPI2_TxBuf[2] = 0b00000000;
+      SPI2_TxBuf[3] = 0b00000000;
+      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
 
-		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);	// enable 5V supply
+      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);	// enable 5V supply
 		  
 
       //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);	// pull HWLO low
@@ -168,88 +160,6 @@ int main(void)
 
 		  //NVMerr = ReadNVM_vnf(&hspi2, GPIOC, GPIO_PIN_1, 5, NVMread);
       // to be completed / corrected
-
-      if(OutputState==0)
-      {
-        OutputState = 1; // using 1 for CCM
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
-
-        // use pre-charge current trip threshold
-        SPI2_TxBuf[0] = CR2_ADDR;
-        SPI2_TxBuf[1] = (CR2_PRCHG&0x00FF0000)>>16;
-		    SPI2_TxBuf[2] = (CR2_PRCHG&0x0000FF00)>>8;
-		    SPI2_TxBuf[3] = (CR2_PRCHG&0x000000FF);
-		    //VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
-        VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf); // Ch. B
-
-        // ugly short delay
-        k=0;
-        while(k<10000)
-          k++;
-
-        SPI2_TxBuf[0] = CR1_ADDR; //0x008400
-        SPI2_TxBuf[1] = 0x04; // --> trigger CCM ON
-        SPI2_TxBuf[2] = 0x84;
-        SPI2_TxBuf[3] = 0x00;
-        //VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
-        VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf); // Ch. B
-
-        while(OutputState == 1)
-        {
-          // read SR1
-          SPI2_TxBuf[0] = 0b01000000|SR1_ADDR; // 0b01 = read command
-          SPI2_TxBuf[1] = 0b00000000;
-          SPI2_TxBuf[2] = 0b00000000;
-          SPI2_TxBuf[3] = 0b00000000;
-          //VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
-          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf); // Ch. B
-
-          switch((SPI2_RxBuf[1]&0xC0)>>6)
-          {
-            case 0b10:
-              OutputState=2;
-              break;
-
-            case 0b11:
-              OutputState=-1;
-              break;
-
-            case 0b00:
-              OutputState=-2;
-              break;
-
-            default:
-              break;
-          }
-        }
-
-        if (OutputState == 2)
-        {
-          // revert to regular current trip threshold
-          SPI2_TxBuf[0] = CR2_ADDR;
-          SPI2_TxBuf[1] = (CR2_CONFIG&0x00FF0000)>>16;
-          SPI2_TxBuf[2] = (CR2_CONFIG&0x0000FF00)>>8;
-          SPI2_TxBuf[3] = (CR2_CONFIG&0x000000FF);
-          //VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
-          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf); // Ch. B
-
-          // turn FET ON
-          SPI2_TxBuf[0] = CR1_ADDR; //0x008400
-          SPI2_TxBuf[1] = 0x00;
-          SPI2_TxBuf[2] = 0x84;
-          SPI2_TxBuf[3] = 0x11; //--> turn on main FET
-          //VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_1, SPI2_TxBuf, SPI2_RxBuf);
-          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf); // Ch. B
-          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
-
-          // ugly short delay
-          k=0;
-          while(k<10000)
-            k++;
-        }
-
-      }
-
 
       
 

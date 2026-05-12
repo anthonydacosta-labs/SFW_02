@@ -179,7 +179,7 @@ void PetWD_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin)
 }
 
 
-uint8_t ReadNVM_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin, uint8_t CRx, uint8_t *result)
+uint8_t RW_NVM_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin, uint8_t R_nW)
 {
 	uint8_t TxBuf[4];
 	uint8_t RxBuf[4];
@@ -193,106 +193,43 @@ uint8_t ReadNVM_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS
 	TxBuf[1] = 0b00000000;
 	TxBuf[2] = 0b00000000;
 	TxBuf[3] = 0b00000000;
-	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_RESET);
-	// ugly short delay
-	k=0;
-	while(k<100)
-	  k++;
-	HAL_SPI_TransmitReceive(hspi, TxBuf, RxBuf, 4, 100);
-	k=0;
-	while(k<100)
-	  k++;
-	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_SET);
-	k=0;
-	while(k<100)
-		  k++;
-
+	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
 	// Note: should check GSB ??
 
 	// now flip 'UNLOCK' bit and write back
 	TxBuf[0] = 0b00000000|CR3_ADDR; // 0b00 = write command
 	TxBuf[1] = RxBuf[1];
 	TxBuf[2] = RxBuf[2]|0b00000010;
-	TxBuf[3] = RxBuf[3];
-	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_RESET);
-	// ugly short delay
-	k=0;
-	while(k<100)
-	  k++;
-	HAL_SPI_TransmitReceive(hspi, TxBuf, RxBuf, 4, 100);
-	k=0;
-	while(k<100)
-	  k++;
-	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_SET);
-	k=0;
-	while(k<100)
-		  k++;
+	TxBuf[3] = RxBuf[3]|0b00000001;
+	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
 
 	// now the VNF is unlocked, send the NVM access key
 	// datasheet is unclear about writing 105B96, 416E58, or 416E59
 	TxBuf[0] = 0b00000000|CR4_ADDR; // 0b00 = write command
 	TxBuf[1] = 0x41;
 	TxBuf[2] = 0x6E;
-	TxBuf[3] = 0x59;
-	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_RESET);
-	// ugly short delay
-	k=0;
-	while(k<100)
-	  k++;
-	HAL_SPI_TransmitReceive(hspi, TxBuf, RxBuf, 4, 100);
-	k=0;
-	while(k<100)
-	  k++;
-	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_SET);
-	k=0;
-	while(k<100)
-		  k++;
+	TxBuf[3] = 0x58|((TxBuf[3]^0x02)&0x02); // pet WD at the same time
+	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
 	// CR4 should now be unlocked
 
 	// now write sector address, access type and start command in CR4
 	TxBuf[0] = 0b00000000|CR4_ADDR; // 0b00 = write command
 	TxBuf[1] = 0x00;
-	switch(CRx)
-	{
-		case 01:
-			TxBuf[2] = CR1_ADDR;
-			break;
-		case 02:
-			TxBuf[2] = CR2_ADDR;
-			break;
-		case 03:
-			TxBuf[2] = CR3_ADDR;
-			break;
-		case 05:
-			TxBuf[2] = CR5_ADDR;
-			break;
-		default:
-			TxBuf[2] = 0x00;
-	}
-	TxBuf[3] = 0x04; // read
-	// compute parity bit
-	//tmp = TxBuf[0]^TxBuf[1]^TxBuf[2]^TxBuf[3];
-  tmp = TxBuf[0]^TxBuf[1]^TxBuf[2];
-	tmp2=tmp;
-	for (k=0;k<7;k++)
-	{
-		tmp2>>=1;
-		tmp^=tmp2;
-	}
-	TxBuf[3] |= ~(tmp&0x01);
-	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_RESET);
-	// ugly short delay
-	k=0;
-	while(k<100)
-	  k++;
-	HAL_SPI_TransmitReceive(hspi, TxBuf, RxBuf, 4, 100);
-	k=0;
-	while(k<100)
-	  k++;
-	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_SET);
-	k=0;
-	while(k<100)
-		  k++;
+	TxBuf[2] = 0x05;
+	TxBuf[3] ^= 0x02; // pet WD
+	TxBuf[3] &= 0x02;
+	if (R_nW==0)
+		TxBuf[3] |= 0x08; // write		/////// 0x0C in one step?
+	else
+	 	TxBuf[3] |= 0x00; // read		/////// 0x04 in one step?
+
+	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
+
+	TxBuf[3] ^= 0x02; // pet WD
+	TxBuf[3] &= 0x02;
+	TxBuf[3] |= 0x04;	// start
+	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
+
 
 	// now poll SR2 and check for NVM status
 	tmp=1;
@@ -302,20 +239,9 @@ uint8_t ReadNVM_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS
 		TxBuf[0] = 0b01000000|SR2_ADDR; // 0b01 = read command
 		TxBuf[1] = 0b00000000;
 		TxBuf[2] = 0b00000000;
-		TxBuf[3] = 0b00000000;
-		HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_RESET);
-		// ugly short delay
-		k=0;
-		while(k<100)
-		  k++;
-		HAL_SPI_TransmitReceive(hspi, TxBuf, RxBuf, 4, 100);
-		k=0;
-		while(k<100)
-		  k++;
-		HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_SET);
-		k=0;
-		while(k<100)
-		  k++;
+		TxBuf[3] ^= 0x02; // pet WD
+		TxBuf[3] &= 0x02;
+		VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
 
 		if (RxBuf[1]&0b01111110)
 		{
@@ -338,51 +264,6 @@ uint8_t ReadNVM_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS
 					break;
 			}
 		}
-	}
-
-	if (error)
-	{
-		for(k=0;k<4;k++)
-			result[k] = RxBuf[k];
-	}
-	else
-	{
-		// everything went well, read the register in RAM
-		TxBuf[1] = 0x00;
-		switch(CRx)
-		{
-			case 01:
-				TxBuf[0] = CR1_ADDR;
-				break;
-			case 02:
-				TxBuf[0] = CR2_ADDR;
-				break;
-			case 03:
-				TxBuf[0] = CR3_ADDR;
-				break;
-			case 05:
-				TxBuf[0] = CR5_ADDR;
-				break;
-			default:
-				TxBuf[0] = 0x00;
-		}
-		TxBuf[0] |= 0b11000000;
-		TxBuf[0] &= 0b01111111; // 0b01 = read command
-		HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_RESET);
-		// ugly short delay
-		k=0;
-		while(k<100)
-		  k++;
-		HAL_SPI_TransmitReceive(hspi, TxBuf, RxBuf, 4, 100);
-		k=0;
-		while(k<100)
-		  k++;
-		HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_SET);
-		k=0;
-		while(k<100)
-		  k++;
-		for(k=0;k<3;k++)
-			result[k] = RxBuf[k+1];
 	}
 
 	return(error);
