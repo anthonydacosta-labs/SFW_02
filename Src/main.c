@@ -137,6 +137,7 @@ int main(void)
 	  }
 	  else // button pressed
 	  {
+      // CURRENT SENSE SELF-TEST
       // Read CR1
       SPI2_TxBuf[0] = 0b01000000|CR1_ADDR; // 0b01 = read command
       SPI2_TxBuf[1] = 0b00000000;
@@ -157,6 +158,30 @@ int main(void)
       SPI2_TxBuf[2] = 0b00000000;
       SPI2_TxBuf[3] = 0b00000000;
       VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+
+      // FET STUCK ON SELF-TEST
+      // Read CR1
+      SPI2_TxBuf[0] = 0b01000000|CR1_ADDR; // 0b01 = read command
+      SPI2_TxBuf[1] = 0b00000000;
+      SPI2_TxBuf[2] = 0b00000000;
+      SPI2_TxBuf[3] = 0b00000000;
+      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+
+      // Flip relevant bits and write CR1
+      SPI2_TxBuf[0] = CR1_ADDR; // 0b00 = write command
+      SPI2_TxBuf[1] = SPI2_RxBuf[1];
+      SPI2_TxBuf[2] = SPI2_RxBuf[2]|0b10; // S_T_START bit = 1
+      SPI2_TxBuf[3] = (SPI2_RxBuf[3]&0x1F)|0x80; // self-test fet stuck-on
+      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+
+      // Read SR7
+      SPI2_TxBuf[0] = 0b01000000|SR6_ADDR; // 0b01 = read command
+      SPI2_TxBuf[1] = 0b00000000;
+      SPI2_TxBuf[2] = 0b00000000;
+      SPI2_TxBuf[3] = 0b00000000;
+      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+
+
 
       HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);	// enable 5V supply
 	  }
