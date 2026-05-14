@@ -159,6 +159,7 @@ int main(void)
       SPI2_TxBuf[3] = 0b00000000;
       VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
 
+      /*
       // FET STUCK ON SELF-TEST
       // Read CR1
       SPI2_TxBuf[0] = 0b01000000|CR1_ADDR; // 0b01 = read command
@@ -174,14 +175,104 @@ int main(void)
       SPI2_TxBuf[3] = (SPI2_RxBuf[3]&0x1F)|0x80; // self-test fet stuck-on
       VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
 
-      // Read SR7
+      // Read SR6
       SPI2_TxBuf[0] = 0b01000000|SR6_ADDR; // 0b01 = read command
       SPI2_TxBuf[1] = 0b00000000;
       SPI2_TxBuf[2] = 0b00000000;
       SPI2_TxBuf[3] = 0b00000000;
       VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+      */
 
+      // PRE-CHARGE, TURN ON, THEN RUN VDS SELF-CHECK
+      if(OutputState==0)
+      {
+        OutputState = 1; // using 1 for CCM
+        //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
 
+        // use pre-charge current trip threshold
+        SPI2_TxBuf[0] = CR2_ADDR;
+        SPI2_TxBuf[1] = (CR2_PRCHG&0x00FF0000)>>16;
+		    SPI2_TxBuf[2] = (CR2_PRCHG&0x0000FF00)>>8;
+		    SPI2_TxBuf[3] = (CR2_PRCHG&0x000000FF);
+		    VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+
+        SPI2_TxBuf[0] = CR1_ADDR; //0x008400
+        SPI2_TxBuf[1] = 0x04; // --> trigger CCM ON
+        SPI2_TxBuf[2] = 0x84;
+        SPI2_TxBuf[3] = 0x00;
+        VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+
+        while(OutputState == 1)
+        {
+          // read SR1
+          SPI2_TxBuf[0] = 0b01000000|SR1_ADDR; // 0b01 = read command
+          SPI2_TxBuf[1] = 0b00000000;
+          SPI2_TxBuf[2] = 0b00000000;
+          SPI2_TxBuf[3] = 0b00000000;
+          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+
+          switch((SPI2_RxBuf[1]&0xC0)>>6)
+          {
+            case 0b10:
+              OutputState=2;
+              break;
+
+            case 0b11:
+              OutputState=-1;
+              break;
+
+            case 0b00:
+              OutputState=-2;
+              break;
+
+            default:
+              break;
+          }
+        }
+
+        if (OutputState == 2)
+        {
+          // revert to regular current trip threshold
+          SPI2_TxBuf[0] = CR2_ADDR;
+          SPI2_TxBuf[1] = (CR2_CONFIG&0x00FF0000)>>16;
+          SPI2_TxBuf[2] = (CR2_CONFIG&0x0000FF00)>>8;
+          SPI2_TxBuf[3] = (CR2_CONFIG&0x000000FF);
+          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+
+          // turn FET ON
+          SPI2_TxBuf[0] = CR1_ADDR; //0x008400
+          SPI2_TxBuf[1] = 0x00;
+          SPI2_TxBuf[2] = 0x84;
+          SPI2_TxBuf[3] = 0x11; //--> turn on main FET
+          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+          //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+
+          // might need a delay here (to let motor current stabilize)
+          // Run Vds self-check
+          SPI2_TxBuf[0] = 0b01000000|CR1_ADDR; // 0b01 = read command
+          SPI2_TxBuf[1] = 0b00000000;
+          SPI2_TxBuf[2] = 0b00000000;
+          SPI2_TxBuf[3] = 0b00000000;
+          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+
+          // Flip relevant bits and write CR1
+          SPI2_TxBuf[0] = CR1_ADDR; // 0b00 = write command
+          SPI2_TxBuf[1] = SPI2_RxBuf[1];
+          SPI2_TxBuf[2] = SPI2_RxBuf[2]|0b10; // S_T_START bit = 1
+          SPI2_TxBuf[3] = (SPI2_RxBuf[3]&0x1F)|0x40; // self-test fet stuck-on
+          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+
+          // Read SR5
+          SPI2_TxBuf[0] = 0b01000000|SR5_ADDR; // 0b01 = read command
+          SPI2_TxBuf[1] = 0b00000000;
+          SPI2_TxBuf[2] = 0b00000000;
+          SPI2_TxBuf[3] = 0b00000000;
+          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+          
+
+        }
+
+      }
 
       HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);	// enable 5V supply
 	  }
