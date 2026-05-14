@@ -113,7 +113,7 @@ int main(void)
   //Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_1);
   Initialize_vnf(&hspi2, GPIOC, GPIO_PIN_2);  // ch. B
 
-  NVMerr = RW_NVM_vnf(&hspi2, GPIOC, GPIO_PIN_2, 1);  // read NVM
+  //NVMerr = RW_NVM_vnf(&hspi2, GPIOC, GPIO_PIN_2, 1);  // read NVM
   //RW_NVM_vnf(&hspi2, GPIOC, GPIO_PIN_2, 0);  // write NVM
   
 
@@ -135,10 +135,24 @@ int main(void)
 
 
 	  }
-	  else
+	  else // button pressed
 	  {
-		
-      SPI2_TxBuf[0] = 0b01000000|CR5_ADDR; // 0b01 = read command
+      // Read CR1
+      SPI2_TxBuf[0] = 0b01000000|CR1_ADDR; // 0b01 = read command
+      SPI2_TxBuf[1] = 0b00000000;
+      SPI2_TxBuf[2] = 0b00000000;
+      SPI2_TxBuf[3] = 0b00000000;
+      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+
+      // Flip relevant bits and write CR1
+      SPI2_TxBuf[0] = CR1_ADDR; // 0b00 = write command
+      SPI2_TxBuf[1] = SPI2_RxBuf[1];
+      SPI2_TxBuf[2] = SPI2_RxBuf[2]|0b10; // S_T_START bit = 1
+      SPI2_TxBuf[3] = (SPI2_RxBuf[3]&0x1F)|0x20; // self-test current sense
+      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+
+      // Read SR7
+      SPI2_TxBuf[0] = 0b01000000|SR7_ADDR; // 0b01 = read command
       SPI2_TxBuf[1] = 0b00000000;
       SPI2_TxBuf[2] = 0b00000000;
       SPI2_TxBuf[3] = 0b00000000;
