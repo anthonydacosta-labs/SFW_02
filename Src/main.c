@@ -137,6 +137,15 @@ int main(void)
 	  }
 	  else // button pressed
 	  {
+
+      // Read CR1
+      SPI2_TxBuf[0] = 0b01000000|CR1_ADDR; // 0b01 = read command
+      SPI2_TxBuf[1] = 0b00000000;
+      SPI2_TxBuf[2] = 0b00000000;
+      SPI2_TxBuf[3] = 0b00000000;
+      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
+
+
       // CURRENT SENSE SELF-TEST
       // Read CR1
       SPI2_TxBuf[0] = 0b01000000|CR1_ADDR; // 0b01 = read command
@@ -267,9 +276,7 @@ int main(void)
           SPI2_TxBuf[1] = 0b00000000;
           SPI2_TxBuf[2] = 0b00000000;
           SPI2_TxBuf[3] = 0b00000000;
-          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);
-          
-
+          VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);          
         }
 
       }
