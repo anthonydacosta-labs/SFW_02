@@ -281,6 +281,13 @@ int main(void)
 
       }
 
+      // Read CR1
+      SPI2_TxBuf[0] = 0b01000000|CR1_ADDR; // 0b01 = read command
+      SPI2_TxBuf[1] = 0b00000000;
+      SPI2_TxBuf[2] = 0b00000000;
+      SPI2_TxBuf[3] = 0b00000000;
+      VNF_TransmitReceive(&hspi2, GPIOC, GPIO_PIN_2, SPI2_TxBuf, SPI2_RxBuf);  
+
       HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);	// enable 5V supply
 	  }
   }

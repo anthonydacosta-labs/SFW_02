@@ -23,8 +23,8 @@
 #define CR5_NVM_MASK 0xFFFFFC
 
 //#define CR1_CONFIG 0x018000		// NVM_DEF_CFG_EN=1, FS_MODE=10 (no change)
-//#define CR1_CONFIG 0x008000		// NVM_DEF_CFG_EN=0, FS_MODE=10 (no change)
-#define CR1_CONFIG 0x008000		// NVM_DEF_CFG_EN=0, FS_MODE=10 (no change)   -- set EN to 1 (only effective if preceded by UNLOCK)
+#define CR1_CONFIG 0x008000		// NVM_DEF_CFG_EN=0, FS_MODE=10 (no change)
+//#define CR1_CONFIG 0x008400		// NVM_DEF_CFG_EN=0, FS_MODE=10 (no change)   -- set EN to 1 (only effective if preceded by UNLOCK)
 #define CR2_CONFIG 0x977401		// T_NOM=280s, OVC_THR=23.3mV, HSC_THR=60.6mV, VDS_THR=300mV
 #define CR2_PRCHG  0x977001		// T_NOM=280s, OVC_THR=23.3mV, HSC_THR=20mV, VDS_THR=300mV
 #define CR3_CONFIG 0x000958		// UV_THR=12V, WD_TIME=200ms, NTC_THR=37.5mV (~150°C)   100101011001

@@ -19,8 +19,8 @@ uint8_t VNF_TransmitReceive(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uin
 	uint8_t tmp2=0;
 	static uint8_t WDbit=0;	// need to make one static variable per VNF channel
 
-	//if (~(TxBuf[0]&0b11000000)) // if write operation, flip the WD bit -- ugly way to pet WD while TIM2 IRQ is disabled
-	if (TxBuf[0]==CR3_ADDR) // if write operation on CR3, flip the WD bit -- ugly way to pet WD while TIM2 IRQ is disabled
+	//if (~(TxBuf[0]&0b11000000)) // if write operation, flip the WD bit
+	if (TxBuf[0]==CR3_ADDR) // if write operation on CR3, flip the WD bit -- it seems we can't write on the "mirrored" WD bits in other CRs
 	{
 		if(WDbit)
 			TxBuf[3]|=0x02;
@@ -121,11 +121,6 @@ void Initialize_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS
 				break;
 		}
 	
-		/*
-		TxBuf[1] = (cfg_word&0x00FF0000)>>16;
-		TxBuf[2] = (cfg_word&0x0000FF00)>>8;
-		TxBuf[3] = (cfg_word&0x000000FF);
-		*/
 		TxBuf[1] = (uint8_t) ((cfg_word>>16)&0xFF);
 		TxBuf[2] = (uint8_t) ((cfg_word>>8)&0xFF);
 		TxBuf[3] = (uint8_t) (cfg_word&0xFF);
@@ -157,34 +152,8 @@ void PetWD_vnf(SPI_HandleTypeDef *hspi, GPIO_TypeDef *CS_GPIOx, uint16_t CS_Pin)
 	{
 		TxBuf[k]=RxBuf[k];
 	}
-	//TxBuf[3]^=0b10; // flip WD bit (tot. 2 bits flipped --> don't flip parity bit)
-	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf);
+	VNF_TransmitReceive(hspi, CS_GPIOx, CS_Pin, TxBuf, RxBuf); // WD bit flip is handled inside this function
 	// TODO: add error processing
-
-	/*
-	k=0;
-	while(k<10000)
-		k++;
-	
-	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_RESET);
-	//HAL_Delay(1); // rough -- we could do better, but a delay is needed (especially when the VNF is in stdby)
-	// ugly short delay
-	k=0;
-	while(k<10000)
-		k++;
-	HAL_SPI_TransmitReceive(hspi, TxBuf, RxBuf, 4, 100);
-	//HAL_Delay(1);
-	// ugly short delay
-	k=0;
-	while(k<10000)
-		k++;
-	HAL_GPIO_WritePin(CS_GPIOx, CS_Pin, GPIO_PIN_SET);
-	//HAL_Delay(1);
-	// ugly short delay
-	k=0;
-	while(k<10000)
-		k++;
-	*/
 
 }
 
